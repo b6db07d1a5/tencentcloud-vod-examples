@@ -9,6 +9,7 @@
     "build": "npx babel src -d ./build/ --source-maps inline",
     "start": "npm run build && node ./build/server.js",
     "dev": "nodemon --require @babel/register src/server.js",
+    "dev-ecc": "nodemon --require @babel/register src/ecc-server.js",
     "dev-vod": "nodemon --require @babel/register src/vod-server.js"
   },
   "dependencies": {
