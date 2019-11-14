@@ -24,9 +24,30 @@ let clientProfile = new ClientProfile()
 clientProfile.signMethod = 'HmacSHA256'
 clientProfile.httpProfile = httpProfile
 
+let task = new models.AiRecognitionTaskInput()
+task.Definition = 10
+
+let mediaInp = new models.MediaInputInfo()
+mediaInp.Url = 'http://techslides.com/demos/sample-videos/small.mp4'
+mediaInp.Name = 'spr'
+mediaInp.Id = 'spr-video-id'
+
+let mediaOpt = new models.MediaOutputInfo()
+mediaOpt.Region = 'ap-bangkok'
+mediaOpt.Bucket = 'spr-1254420689'
+mediaOpt.Dir = '/output/'
+
+let req = new models.ProcessMediaByUrlRequest()
+
+req.InputInfo = mediaInp
+req.OutputInfo = mediaOpt
+req.AiRecognitionTask = task
+
 let client = new VodClient(cred, '', clientProfile)
 
-console.log(client)
+client.ProcessMediaByUrl(req, function(err, res) {
+  console.log(err || res)
+})
 
 // let client = new EccClient(cred, 'ap-shanghai', clientProfile)
 
