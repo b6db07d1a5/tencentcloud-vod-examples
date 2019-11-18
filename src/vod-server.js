@@ -2,6 +2,8 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import tencentcloud from 'tencentcloud-sdk-nodejs'
+import express from 'express'
+import bodyParser from 'body-parser'
 
 const VodClient = tencentcloud.vod.v20180717.Client
 const models = tencentcloud.vod.v20180717.Models
@@ -12,53 +14,67 @@ const HttpProfile = tencentcloud.common.HttpProfile
 
 const secretId = process.env.SECRET_ID
 const secretKey = process.env.SECRET_KEY
+const tcRegion = process.env.REGION
+const tcBucket = process.env.COS_BUCKET
 
 let cred = new Credential(secretId, secretKey)
 
 let httpProfile = new HttpProfile()
 httpProfile.reqMethod = 'POST'
 httpProfile.reqTimeout = 30
-httpProfile.endpoint = 'vod.tencentcloudapi.com'
+httpProfile.endpoint = `vod.${tcRegion}.tencentcloudapi.com`
 
 let clientProfile = new ClientProfile()
 clientProfile.signMethod = 'HmacSHA256'
 clientProfile.httpProfile = httpProfile
 
-let task = new models.AiRecognitionTaskInput()
-task.Definition = 10
+let client = new VodClient(cred, tcRegion, clientProfile)
 
-let mediaInp = new models.MediaInputInfo()
-mediaInp.Url = 'http://techslides.com/demos/sample-videos/small.mp4'
-mediaInp.Name = 'spr'
-mediaInp.Id = 'spr-video-id'
+const app = express()
+const port = 3000
 
-let mediaOpt = new models.MediaOutputInfo()
-mediaOpt.Region = 'ap-bangkok'
-mediaOpt.Bucket = 'spr-1254420689'
-mediaOpt.Dir = '/output/'
+app.use(bodyParser.json())
 
-let req = new models.ProcessMediaByUrlRequest()
+app.get('/', (req, res) => res.send('Hello World!'))
 
-req.InputInfo = mediaInp
-req.OutputInfo = mediaOpt
-req.AiRecognitionTask = task
+app.get('/process', (req, res) => {
+  const { url } = req.query
 
-let client = new VodClient(cred, '', clientProfile)
+  const id = url.split('/').pop()
 
-client.ProcessMediaByUrl(req, function(err, res) {
-  console.log(err || res)
+  let task = new models.AiRecognitionTaskInput()
+  task.Definition = 20
+
+  let mediaInp = new models.MediaInputInfo()
+  mediaInp.Url = url
+  mediaInp.Name = id
+  mediaInp.Id = id
+
+  let mediaOpt = new models.MediaOutputInfo()
+  mediaOpt.Region = tcRegion
+  mediaOpt.Bucket = tcBucket
+  mediaOpt.Dir = '/output/'
+
+  let mediaReq = new models.ProcessMediaByUrlRequest()
+
+  mediaReq.InputInfo = mediaInp
+  mediaReq.OutputInfo = mediaOpt
+  mediaReq.AiRecognitionTask = task
+
+  client.ProcessMediaByUrl(mediaReq, function(mediaErr, mediaRes) {
+    res.send(mediaErr || mediaRes)
+  })
 })
 
-// let client = new EccClient(cred, 'ap-shanghai', clientProfile)
+app.get('/query', (req, res) => {
+  const { task } = req.query
 
-// let req = new models.EHOCRRequest()
-// req.InputType = 1
-// req.Image = process.env.IMAGE
+  let taskReq = new models.DescribeTaskDetailRequest()
+  taskReq.TaskId = task
 
-// client.EHOCR(req, function(err, response) {
-//   if (err) {
-//     console.log(err)
-//     return
-//   }
-//   console.log(response.to_json_string())
-// })
+  client.DescribeTaskDetail(taskReq, function(taskErr, taskRes) {
+    res.send(taskErr || taskRes)
+  })
+})
+
+app.listen(port, () => console.log(`Example app listening on port ${port}!`))
