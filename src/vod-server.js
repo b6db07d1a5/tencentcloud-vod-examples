@@ -42,8 +42,11 @@ app.get('/process', (req, res) => {
 
   const id = url.split('/').pop()
 
-  let task = new models.AiRecognitionTaskInput()
-  task.Definition = 20
+  let aiRecognitionTask = new models.AiRecognitionTaskInput()
+  aiRecognitionTask.Definition = 20
+
+  let aiAnalysisTask = new models.AiAnalysisTaskInput()
+  aiAnalysisTask.Definition = 20
 
   let mediaInp = new models.MediaInputInfo()
   mediaInp.Url = url
@@ -59,7 +62,8 @@ app.get('/process', (req, res) => {
 
   mediaReq.InputInfo = mediaInp
   mediaReq.OutputInfo = mediaOpt
-  mediaReq.AiRecognitionTask = task
+  mediaReq.AiRecognitionTask = aiRecognitionTask
+  mediaReq.AiAnalysisTask = aiAnalysisTask
 
   client.ProcessMediaByUrl(mediaReq, function(mediaErr, mediaRes) {
     res.send(mediaErr || mediaRes)
